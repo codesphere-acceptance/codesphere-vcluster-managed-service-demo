@@ -1,15 +1,18 @@
 # Codesphere landscape — vCluster + managed service + Helm demo.
 #
-# One file declares the whole thing: the vCluster booked as a managed service,
-# the Helm chart that gets deployed into it, and the headless route that wires a
-# custom domain to the running app with TLS at the Codesphere edge.
+# This file declares the deploy + routing half of the demo: the Helm chart that
+# gets deployed into the vCluster, and the headless route that wires a custom
+# domain to the running app with TLS at the Codesphere edge.
 #
 #   prepare -> deploy the Helm chart into the vCluster (helm upgrade --install)
-#   run     -> the vCluster managed service + the headless route to the app
+#   run     -> the headless route to the app's in-vCluster Service
 #
-# Prerequisite: the team's vCluster is a team-level singleton.
-# Declaring it below books/references it; the base image auto-mounts its
-# kubeconfig (~/.kube/config) into every pod, so `helm` and `kubectl` just work.
+# Prerequisite: the team's vCluster is a team-level singleton, booked SEPARATELY
+# as a managed service (UI: Managed Services, or the Public API) — not declared
+# here. `virtual-k8s` is not a `run:` provider in the landscape schema (its
+# ci.yml lifecycle integration is still WIP). Once booked, the base image
+# auto-mounts its kubeconfig (~/.kube/config) into every pod, so `helm` and
+# `kubectl` just work in the prepare stage below.
 schemaVersion: v0.4
 
 prepare:
@@ -24,28 +27,6 @@ test:
   steps: []
 
 run:
-  # vCluster booked as a managed service, scoped to the team.
-  # virtual-k8s is a team singleton; its kubeconfig is injected into the
-  # landscape pods so the prepare stage can deploy into it.
-  demo-vcluster:
-    provider:
-      name: virtual-k8s
-      schemaVersion: v1
-    # Resource quota for the vCluster. These are the `virtual-k8s` "Custom" plan
-    # (id 0) parameters, set to lean-but-valid values (each is at/above the
-    # provider's minimum). `cpu` is in tenths of a vCPU, the rest in MiB. Verify
-    # or refresh against your instance with `mise run providers virtual-k8s`.
-    #   cpu: min 32 max 320 | memory: min 4266 max 32768
-    #   storage: min 0 max 120000 | ephemeralStorage: min 15360 max 120000
-    plan:
-      id: 0
-      parameters:
-        cpu: 32
-        memory: 4266
-        storage: 2048
-        ephemeralStorage: 15360
-        loadBalancerLimit: 1
-
   # Headless route — the custom domain is wired to the app's Service inside
   # the vCluster. Codesphere syncs the in-vCluster Service to the host cluster
   # under a predictable DNS name and terminates TLS at the edge, so the app is

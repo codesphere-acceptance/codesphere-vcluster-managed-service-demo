@@ -11,7 +11,7 @@ landscape, run it, and the app answers on your custom domain.
 
 | Path | Purpose |
 | --- | --- |
-| `ci.yml` | The whole landscape: the vCluster managed service, the Helm deploy step, and the headless route to the custom domain. |
+| `ci.yml` | The landscape: the Helm deploy step (`prepare`) and the headless route to the custom domain (`run`). The vCluster itself is booked separately as a team-level managed service. |
 | `chart/` | The Helm chart — a Kubernetes-native app (`nginx-unprivileged` serving one page). Editable straight from the browser IDE. |
 | `deploy/deploy.sh` | One reproducible `helm upgrade --install` into the vCluster. |
 | `tools/` | `doctor.sh` (toolchain + API check) and `providers.sh` (query the managed-service catalog). |
@@ -20,16 +20,20 @@ landscape, run it, and the app answers on your custom domain.
 ## How it works
 
 ```
+(prereq) vCluster booked as a team-level managed service (UI / Public API)
 prepare:  helm upgrade --install  ->  Deployment + Service in the vCluster
-run:      demo-vcluster (managed service)  +  demo-app (headless route)
+run:      demo-app (headless route)
 
 Browser ──HTTPS──▶ Codesphere edge (TLS) ──▶ headless route (ci.yml)
         ──▶ demo-app Service in the vCluster ──▶ nginx pod
 ```
 
-- The **vCluster** is a team-level managed service (`provider: virtual-k8s`).
-  Booking it auto-mounts its kubeconfig into the landscape pods, so `helm` and
-  `kubectl` (both in the base image) deploy into it with no extra tooling.
+- The **vCluster** is a team-level managed service (`provider: virtual-k8s`),
+  booked separately from this landscape (Managed Services UI or the Public API;
+  it is a team singleton). It is **not** declared in `ci.yml` — `virtual-k8s`
+  is not a `run:` provider in the landscape schema. Once booked, its kubeconfig
+  is auto-mounted into the landscape pods, so `helm` and `kubectl` (both in the
+  base image) deploy into it with no extra tooling.
 - The **Helm chart** is deployed by `deploy/deploy.sh` — the app is imported
   from its manifests and rolled out reproducibly, not hand-assembled.
 - The **headless route** in `ci.yml` forwards the custom domain to the app's
@@ -68,15 +72,16 @@ Team A1); only `CS_TOKEN` is required.
 
 ## Deploy it
 
-1. **Book the vCluster** as a managed service at team level. It is declared in
-   `ci.yml` (`demo-vcluster`) with the verified `virtual-k8s` "Custom" plan
-   (resolve/refresh the quota parameters any time with `mise run providers
-   virtual-k8s`).
+1. **Book the vCluster** as a team-level managed service — from the **Managed
+   Services** section of the UI or via the Public API (it is a team singleton).
+   Pick the `virtual-k8s` "Custom" plan; resolve/refresh valid quota parameters
+   any time with `mise run providers virtual-k8s`. This is booked separately —
+   it is not part of `ci.yml`.
 2. **Add your custom domain** in the workspace UI and point it at the landscape.
 3. **Open the workspace** — the Helm chart under `chart/` is visible and
    editable in the browser IDE.
 4. **Sync the landscape and run all.** `prepare` deploys the chart into the
-   vCluster; `run` brings up the managed service and the headless route.
+   vCluster; `run` brings up the headless route to the app.
 5. **Open the custom domain** in a browser — the Helm-imported app responds over
    TLS.
 

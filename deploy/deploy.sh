@@ -16,7 +16,7 @@ CHART_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../chart" && pwd)"
 
 echo "== vCluster context =="
 kubectl config current-context || {
-  echo "error: no kubeconfig — book the vCluster managed service first (ci.yml: demo-vcluster)" >&2
+  echo "error: no kubeconfig — book the team's vCluster (virtual-k8s) managed service first (Managed Services UI / Public API)" >&2
   exit 1
 }
 
