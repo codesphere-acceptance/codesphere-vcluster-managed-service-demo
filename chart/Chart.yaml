@@ -1,0 +1,9 @@
+apiVersion: v2
+name: demo-app
+description: >-
+  A minimal, Kubernetes-native web application imported as a Helm chart.
+  Serves a single static page over HTTP so a vCluster + managed-service +
+  custom-domain deployment can be proven end to end (ATS-05).
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

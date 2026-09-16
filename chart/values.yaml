@@ -1,0 +1,41 @@
+# Values for the demo-app chart.
+#
+# The name is pinned so the in-vCluster Service DNS is deterministic. Codesphere
+# syncs a vCluster Service to the host cluster under:
+#
+#   http://<service>-x-<namespace>-x-k8s.rg-<teamId>.svc.cluster.local:<port>
+#
+# The headless route in ci.yml targets exactly that name, so keep this in sync
+# with the release name and namespace used by deploy/deploy.sh.
+fullnameOverride: demo-app
+
+replicaCount: 1
+
+image:
+  # nginx-unprivileged runs as a non-root user and listens on 8080, which is
+  # required under the restricted pod security enforced inside a vCluster.
+  repository: nginxinc/nginx-unprivileged
+  tag: "1.27-alpine"
+  pullPolicy: IfNotPresent
+
+service:
+  # Port the headless route forwards to (ci.yml target ...:80).
+  port: 80
+  # Port nginx-unprivileged listens on inside the pod.
+  targetPort: 8080
+
+resources:
+  requests:
+    cpu: 25m
+    memory: 32Mi
+  limits:
+    cpu: 100m
+    memory: 64Mi
+    ephemeral-storage: 256Mi
+
+# Page rendered by the app. Kept in values so the "application" is editable
+# straight from the browser IDE without touching a template.
+page:
+  title: "Codesphere vCluster + Managed Service Demo"
+  heading: "It works — served from a Helm chart inside a vCluster."
+  subheading: "Kubernetes-native app, imported via Helm, reachable over your custom domain with TLS."

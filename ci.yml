@@ -1,0 +1,58 @@
+# Codesphere landscape — vCluster + managed service + Helm demo (ATS-05).
+#
+# One file declares the whole thing: the vCluster booked as a managed service,
+# the Helm chart that gets deployed into it, and the headless route that wires a
+# custom domain to the running app with TLS at the Codesphere edge.
+#
+#   prepare -> deploy the Helm chart into the vCluster (helm upgrade --install)
+#   run     -> the vCluster managed service + the headless route to the app
+#
+# Prerequisite (ATS-05 step 5.2): the team's vCluster is a team-level singleton.
+# Declaring it below books/references it; the base image auto-mounts its
+# kubeconfig (~/.kube/config) into every pod, so `helm` and `kubectl` just work.
+schemaVersion: v0.4
+
+prepare:
+  steps:
+    # A9 + A20: the Kubernetes-native app is imported via Helm and deployed
+    # reproducibly — the deployment is the direct result of what is declared,
+    # not something assembled by hand.
+    - name: Deploy the Helm chart into the vCluster
+      command: bash deploy/deploy.sh
+
+test:
+  steps: []
+
+run:
+  # A4 + A6: vCluster booked as a managed service, scoped to the team.
+  # virtual-k8s is a team singleton; its kubeconfig is injected into the
+  # landscape pods so the prepare stage can deploy into it.
+  demo-vcluster:
+    provider:
+      name: virtual-k8s
+      schemaVersion: v1
+    # Resource quota for the vCluster. The exact plan id and parameter names
+    # come from the provider catalog — scaffold once via the Codesphere UI (or
+    # the Managed Services API `get provider` endpoint) and paste the values
+    # here. Adjust to your instance before the first sync.
+    plan:
+      id: 0
+      parameters:
+        cpu: 2
+        memory: 4096
+        storage: 10240
+        ephemeralStorage: 4096
+
+  # A25: headless route — the custom domain is wired to the app's Service inside
+  # the vCluster. Codesphere syncs the in-vCluster Service to the host cluster
+  # under a predictable DNS name and terminates TLS at the edge, so the app is
+  # reachable over host/path routing, secured by default.
+  #
+  # Target = http://<service>-x-<namespace>-x-k8s.rg-<teamId>.svc.cluster.local
+  # where <service>/<namespace> match RELEASE/NAMESPACE in deploy/deploy.sh.
+  demo-app:
+    network:
+      paths:
+        - path: /
+          stripPath: false
+          target: http://demo-app-x-demo-x-k8s.rg-${{ team.id }}.svc.cluster.local:80
