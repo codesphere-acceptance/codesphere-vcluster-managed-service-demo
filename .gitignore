@@ -4,3 +4,9 @@
 *.tgz
 charts/
 deployment-logs/
+
+# Local toolchain + secrets
+.direnv/
+.env
+.env.local
+

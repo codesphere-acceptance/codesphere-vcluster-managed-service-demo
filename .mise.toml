@@ -1,0 +1,35 @@
+# Dev toolchain for this repo, pinned so every machine resolves the same tools.
+#
+# This is a deploy/IaC repo, so the toolchain is the Codesphere deploy stack
+# (helm, kubectl), the API helpers (jq, yq, curl via the OS, gh), and direnv to
+# auto-activate it. The Helm chart is deployed inside Codesphere; locally these
+# tools are for linting the chart and talking to the team via the Public API.
+[tools]
+helm = "3"
+kubectl = "1.31"
+jq = "latest"
+yq = "latest"
+gh = "latest"
+direnv = "latest"
+
+[tasks.doctor]
+description = "Verify the deploy toolchain and Codesphere API access"
+run = "bash tools/doctor.sh"
+
+[tasks.setup]
+description = "Install pinned tools, then run doctor"
+run = """
+mise install
+bash tools/doctor.sh
+"""
+
+[tasks.lint]
+description = "helm lint + render the chart"
+run = """
+helm lint chart
+helm template demo-app chart --namespace demo >/dev/null && echo "template OK"
+"""
+
+[tasks.providers]
+description = "Show a managed-service provider's plans (default: virtual-k8s)"
+run = "bash tools/providers.sh"

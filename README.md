@@ -14,6 +14,8 @@ landscape, run it, and the app answers on your custom domain.
 | `ci.yml` | The whole landscape: the vCluster managed service, the Helm deploy step, and the headless route to the custom domain. |
 | `chart/` | The Helm chart — a Kubernetes-native app (`nginx-unprivileged` serving one page). Editable straight from the browser IDE. |
 | `deploy/deploy.sh` | One reproducible `helm upgrade --install` into the vCluster. |
+| `tools/` | `doctor.sh` (toolchain + API check) and `providers.sh` (query the managed-service catalog). |
+| `.mise.toml`, `.envrc` | Pinned local toolchain (`helm`, `kubectl`, `jq`, `yq`, `gh`, `direnv`) and auto-loading of `.env.local`. |
 
 ## How it works
 
@@ -41,12 +43,35 @@ Browser ──HTTPS──▶ Codesphere edge (TLS) ──▶ headless route (ci.
   The service name (`demo-app`) and namespace (`demo`) come from
   `RELEASE`/`NAMESPACE` in `deploy/deploy.sh`; keep the three in sync.
 
+## Local setup
+
+The toolchain is pinned with [mise](https://mise.jdx.dev/) and auto-activated by
+[direnv](https://direnv.net/):
+
+```bash
+cp .env.example .env.local   # add your CS_TOKEN (Account Settings > API Keys)
+direnv allow                 # trust .envrc: activates mise + loads .env.local
+mise install                 # fetch helm, kubectl, jq, yq, gh at pinned versions
+mise run doctor              # verify the toolchain + Codesphere API access
+```
+
+`.env.local` (gitignored) holds the Public API credentials used by the `cs` CLI
+and `tools/*.sh`. Defaults target the acceptance instance (`csa.codesphere-demo.com`,
+Team A1); only `CS_TOKEN` is required.
+
+- `mise run lint` — `helm lint` + render the chart.
+- `mise run providers [name]` — inspect the managed-service catalog. This is how
+  the `virtual-k8s` plan in `ci.yml` was resolved; re-run it to refresh the
+  values for your instance.
+- `cs list workspaces` / `cs create workspace` — the `cs` CLI reads `CS_API` /
+  `CS_TEAM_ID` from `.env.local` to manage the team's workspaces.
+
 ## Deploy it (ATS-05 walkthrough)
 
 1. **Book the vCluster** as a managed service at team level. It is declared in
-   `ci.yml` (`demo-vcluster`); the exact plan id / quota parameters come from
-   your instance's provider catalog — scaffold once via the Codesphere UI (or
-   the Managed Services API `get provider` endpoint) and paste the values in.
+   `ci.yml` (`demo-vcluster`) with the verified `virtual-k8s` "Custom" plan
+   (resolve/refresh the quota parameters any time with `mise run providers
+   virtual-k8s`).
 2. **Add your custom domain** in the workspace UI and point it at the landscape.
 3. **Open the workspace** — the Helm chart under `chart/` is visible and
    editable in the browser IDE.
@@ -65,9 +90,6 @@ port other than `8080`, update `service.targetPort` and the deployment
 
 ## Validate locally
 
-With `helm` installed:
-
 ```bash
-helm lint chart
-helm template demo-app chart --namespace demo
+mise run lint    # helm lint + render the chart (or: helm lint chart)
 ```

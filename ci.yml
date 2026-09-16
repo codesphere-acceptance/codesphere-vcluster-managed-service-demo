@@ -31,17 +31,20 @@ run:
     provider:
       name: virtual-k8s
       schemaVersion: v1
-    # Resource quota for the vCluster. The exact plan id and parameter names
-    # come from the provider catalog — scaffold once via the Codesphere UI (or
-    # the Managed Services API `get provider` endpoint) and paste the values
-    # here. Adjust to your instance before the first sync.
+    # Resource quota for the vCluster. These are the `virtual-k8s` "Custom" plan
+    # (id 0) parameters, set to lean-but-valid values (each is at/above the
+    # provider's minimum). `cpu` is in tenths of a vCPU, the rest in MiB. Verify
+    # or refresh against your instance with `mise run providers virtual-k8s`.
+    #   cpu: min 32 max 320 | memory: min 4266 max 32768
+    #   storage: min 0 max 120000 | ephemeralStorage: min 15360 max 120000
     plan:
       id: 0
       parameters:
-        cpu: 2
-        memory: 4096
-        storage: 10240
-        ephemeralStorage: 4096
+        cpu: 32
+        memory: 4266
+        storage: 2048
+        ephemeralStorage: 15360
+        loadBalancerLimit: 1
 
   # A25: headless route — the custom domain is wired to the app's Service inside
   # the vCluster. Codesphere syncs the in-vCluster Service to the host cluster
