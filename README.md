@@ -2,7 +2,7 @@
 
 A deliberately small demonstration of deploying a **Helm-chart-based, Kubernetes-native
 application into a vCluster booked as a Codesphere managed service**, reachable
-under a **custom domain over TLS** — the ATS-05 acceptance scenario.
+under a **custom domain over TLS**.
 
 Everything is declared in one place and deployed reproducibly: sync the
 landscape, run it, and the app answers on your custom domain.
@@ -56,7 +56,7 @@ mise run doctor              # verify the toolchain + Codesphere API access
 ```
 
 `.env.local` (gitignored) holds the Public API credentials used by the `cs` CLI
-and `tools/*.sh`. Defaults target the acceptance instance (`csa.codesphere-demo.com`,
+and `tools/*.sh`. Defaults target the demo instance (`csa.codesphere-demo.com`,
 Team A1); only `CS_TOKEN` is required.
 
 - `mise run lint` — `helm lint` + render the chart.
@@ -66,7 +66,7 @@ Team A1); only `CS_TOKEN` is required.
 - `cs list workspaces` / `cs create workspace` — the `cs` CLI reads `CS_API` /
   `CS_TEAM_ID` from `.env.local` to manage the team's workspaces.
 
-## Deploy it (ATS-05 walkthrough)
+## Deploy it
 
 1. **Book the vCluster** as a managed service at team level. It is declared in
    `ci.yml` (`demo-vcluster`) with the verified `virtual-k8s` "Custom" plan

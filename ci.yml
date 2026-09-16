@@ -1,4 +1,4 @@
-# Codesphere landscape — vCluster + managed service + Helm demo (ATS-05).
+# Codesphere landscape — vCluster + managed service + Helm demo.
 #
 # One file declares the whole thing: the vCluster booked as a managed service,
 # the Helm chart that gets deployed into it, and the headless route that wires a
@@ -7,14 +7,14 @@
 #   prepare -> deploy the Helm chart into the vCluster (helm upgrade --install)
 #   run     -> the vCluster managed service + the headless route to the app
 #
-# Prerequisite (ATS-05 step 5.2): the team's vCluster is a team-level singleton.
+# Prerequisite: the team's vCluster is a team-level singleton.
 # Declaring it below books/references it; the base image auto-mounts its
 # kubeconfig (~/.kube/config) into every pod, so `helm` and `kubectl` just work.
 schemaVersion: v0.4
 
 prepare:
   steps:
-    # A9 + A20: the Kubernetes-native app is imported via Helm and deployed
+    # The Kubernetes-native app is imported via Helm and deployed
     # reproducibly — the deployment is the direct result of what is declared,
     # not something assembled by hand.
     - name: Deploy the Helm chart into the vCluster
@@ -24,7 +24,7 @@ test:
   steps: []
 
 run:
-  # A4 + A6: vCluster booked as a managed service, scoped to the team.
+  # vCluster booked as a managed service, scoped to the team.
   # virtual-k8s is a team singleton; its kubeconfig is injected into the
   # landscape pods so the prepare stage can deploy into it.
   demo-vcluster:
@@ -46,7 +46,7 @@ run:
         ephemeralStorage: 15360
         loadBalancerLimit: 1
 
-  # A25: headless route — the custom domain is wired to the app's Service inside
+  # Headless route — the custom domain is wired to the app's Service inside
   # the vCluster. Codesphere syncs the in-vCluster Service to the host cluster
   # under a predictable DNS name and terminates TLS at the edge, so the app is
   # reachable over host/path routing, secured by default.
